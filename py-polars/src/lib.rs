@@ -2,7 +2,7 @@
 #![allow(clippy::nonstandard_macro_braces)] // needed because clippy does not understand proc macro of pyo3
 #![allow(clippy::transmute_undefined_repr)]
 #[macro_use]
-extern crate polars;
+extern crate polars as polars_rs;
 extern crate core;
 
 use pyo3::prelude::*;
@@ -43,8 +43,8 @@ use crate::prelude::{ClosedWindow, DataType, DatetimeArgs, Duration, DurationArg
 use dsl::ToExprs;
 #[cfg(not(target_os = "linux"))]
 use mimalloc::MiMalloc;
-use polars::functions::{diag_concat_df, hor_concat_df};
-use polars::prelude::Null;
+use polars_rs::functions::{diag_concat_df, hor_concat_df};
+use polars_rs::prelude::Null;
 use polars_core::datatypes::TimeUnit;
 #[cfg(feature = "ipc")]
 use polars_core::export::arrow::io::ipc::read::read_file_metadata;
@@ -122,32 +122,32 @@ pub fn fold(acc: PyExpr, lambda: PyObject, exprs: Vec<PyExpr>) -> PyExpr {
 
 #[pyfunction]
 fn arange(low: PyExpr, high: PyExpr, step: usize) -> PyExpr {
-    polars::lazy::dsl::arange(low.inner, high.inner, step).into()
+    polars_rs::lazy::dsl::arange(low.inner, high.inner, step).into()
 }
 
 #[pyfunction]
 fn repeat(value: &PyAny, n_times: PyExpr) -> PyExpr {
     if let Ok(true) = value.is_instance_of::<PyBool>() {
         let val = value.extract::<bool>().unwrap();
-        polars::lazy::dsl::repeat(val, n_times.inner).into()
+        polars_rs::lazy::dsl::repeat(val, n_times.inner).into()
     } else if let Ok(int) = value.downcast::<PyInt>() {
         let val = int.extract::<i64>().unwrap();
 
         if val > 0 && val < i32::MAX as i64 || val < 0 && val > i32::MIN as i64 {
-            polars::lazy::dsl::repeat(val as i32, n_times.inner).into()
+            polars_rs::lazy::dsl::repeat(val as i32, n_times.inner).into()
         } else {
-            polars::lazy::dsl::repeat(val, n_times.inner).into()
+            polars_rs::lazy::dsl::repeat(val, n_times.inner).into()
         }
     } else if let Ok(float) = value.downcast::<PyFloat>() {
         let val = float.extract::<f64>().unwrap();
-        polars::lazy::dsl::repeat(val, n_times.inner).into()
+        polars_rs::lazy::dsl::repeat(val, n_times.inner).into()
     } else if let Ok(pystr) = value.downcast::<PyString>() {
         let val = pystr
             .to_str()
             .expect("could not transform Python string to Rust Unicode");
-        polars::lazy::dsl::repeat(val, n_times.inner).into()
+        polars_rs::lazy::dsl::repeat(val, n_times.inner).into()
     } else if value.is_none() {
-        polars::lazy::dsl::repeat(Null {}, n_times.inner).into()
+        polars_rs::lazy::dsl::repeat(Null {}, n_times.inner).into()
     } else {
         panic!("could not convert value {:?} as a Literal", value)
     }
@@ -165,17 +165,17 @@ fn binary_function(
 
 #[pyfunction]
 fn pearson_corr(a: dsl::PyExpr, b: dsl::PyExpr) -> dsl::PyExpr {
-    polars::lazy::dsl::pearson_corr(a.inner, b.inner).into()
+    polars_rs::lazy::dsl::pearson_corr(a.inner, b.inner).into()
 }
 
 #[pyfunction]
 fn spearman_rank_corr(a: dsl::PyExpr, b: dsl::PyExpr) -> dsl::PyExpr {
-    polars::lazy::dsl::spearman_rank_corr(a.inner, b.inner).into()
+    polars_rs::lazy::dsl::spearman_rank_corr(a.inner, b.inner).into()
 }
 
 #[pyfunction]
 fn cov(a: dsl::PyExpr, b: dsl::PyExpr) -> dsl::PyExpr {
-    polars::lazy::dsl::cov(a.inner, b.inner).into()
+    polars_rs::lazy::dsl::cov(a.inner, b.inner).into()
 }
 
 #[pyfunction]
@@ -183,8 +183,8 @@ fn argsort_by(by: Vec<dsl::PyExpr>, reverse: Vec<bool>) -> dsl::PyExpr {
     let by = by
         .into_iter()
         .map(|e| e.inner)
-        .collect::<Vec<polars::lazy::dsl::Expr>>();
-    polars::lazy::dsl::argsort_by(by, &reverse).into()
+        .collect::<Vec<polars_rs::lazy::dsl::Expr>>();
+    polars_rs::lazy::dsl::argsort_by(by, &reverse).into()
 }
 
 #[pyfunction]
@@ -200,19 +200,19 @@ fn version() -> &'static str {
 
 #[pyfunction]
 fn toggle_string_cache(toggle: bool) {
-    polars::toggle_string_cache(toggle)
+    polars_rs::toggle_string_cache(toggle)
 }
 
 #[pyfunction]
 fn concat_str(s: Vec<dsl::PyExpr>, sep: &str) -> dsl::PyExpr {
     let s = s.into_iter().map(|e| e.inner).collect();
-    polars::lazy::dsl::concat_str(s, sep).into()
+    polars_rs::lazy::dsl::concat_str(s, sep).into()
 }
 
 #[pyfunction]
 fn concat_lst(s: Vec<dsl::PyExpr>) -> dsl::PyExpr {
     let s = s.into_iter().map(|e| e.inner).collect();
-    polars::lazy::dsl::concat_lst(s).into()
+    polars_rs::lazy::dsl::concat_lst(s).into()
 }
 
 #[pyfunction]
@@ -240,7 +240,7 @@ fn py_datetime(
         millisecond,
     };
 
-    polars::lazy::dsl::datetime(args).into()
+    polars_rs::lazy::dsl::datetime(args).into()
 }
 
 #[pyfunction]
@@ -263,7 +263,7 @@ fn py_duration(
         weeks: weeks.map(|e| e.inner),
     };
 
-    polars::lazy::dsl::duration(args).into()
+    polars_rs::lazy::dsl::duration(args).into()
 }
 
 #[pyfunction]
@@ -293,7 +293,7 @@ fn concat_lf(lfs: &PyAny, rechunk: bool) -> PyResult<PyLazyFrame> {
         lfs.push(lf);
     }
 
-    let lf = polars::lazy::dsl::concat(lfs, rechunk).map_err(PyPolarsErr::from)?;
+    let lf = polars_rs::lazy::dsl::concat(lfs, rechunk).map_err(PyPolarsErr::from)?;
     Ok(lf.into())
 }
 
@@ -414,7 +414,7 @@ fn py_date_range(
         "ms" => TimeUnit::Milliseconds,
         _ => panic!("{}", "expected one of {'ns', 'ms'}"),
     };
-    polars::time::date_range_impl(name, start, stop, Duration::parse(every), closed.0, tu)
+    polars_rs::time::date_range_impl(name, start, stop, Duration::parse(every), closed.0, tu)
         .into_series()
         .into()
 }
@@ -422,19 +422,19 @@ fn py_date_range(
 #[pyfunction]
 fn min_exprs(exprs: Vec<PyExpr>) -> PyExpr {
     let exprs = exprs.to_exprs();
-    polars::lazy::dsl::min_exprs(exprs).into()
+    polars_rs::lazy::dsl::min_exprs(exprs).into()
 }
 
 #[pyfunction]
 fn max_exprs(exprs: Vec<PyExpr>) -> PyExpr {
     let exprs = exprs.to_exprs();
-    polars::lazy::dsl::max_exprs(exprs).into()
+    polars_rs::lazy::dsl::max_exprs(exprs).into()
 }
 
 #[pyfunction]
 fn as_struct(exprs: Vec<PyExpr>) -> PyExpr {
     let exprs = exprs.to_exprs();
-    polars::lazy::dsl::as_struct(&exprs).into()
+    polars_rs::lazy::dsl::as_struct(&exprs).into()
 }
 
 #[pymodule]
